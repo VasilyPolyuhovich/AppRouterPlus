@@ -3,9 +3,15 @@ import Foundation
 /// Marker protocol for tabs.
 public protocol TabType: Hashable, CaseIterable, Sendable {}
 
-/// Destination is a typed, codable route node.
-/// Conformers should implement a *stable* path segment and a URL decoder.
-public protocol DestinationType: Hashable, Codable, Sendable {
+/// Base protocol for navigation destinations.
+/// NO Codable requirement - destinations can contain ViewModels, closures, or any types.
+/// For deep link support, conform to `DeepLinkableDestination` instead.
+public protocol DestinationType: Hashable, Sendable {}
+
+/// Extended protocol for destinations that support deep linking via URLs.
+/// Adds Codable requirement and URL serialization methods.
+/// Use this when you need `Router.navigate(to: URL)` functionality.
+public protocol DeepLinkableDestination: DestinationType, Codable {
     /// Return a stable path component for the given destination.
     /// Example: `.detail(id: UUID())` -> "detail"
     static func path(for destination: Self) -> String

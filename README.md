@@ -1,5 +1,17 @@
 # AppRouterPlus
 
+## v2.0: Optional Deep Linking
+
+**New in v2.0:** Deep linking is now **optional**!
+
+- **Without deep links:** Just conform to `DestinationType` - no Codable needed
+- **With deep links:** Conform to `DeepLinkableDestination` - keeps Codable + URL methods
+- **Mixed scenarios:** Use two enums - internal routes + deep link routes
+
+See [MIGRATION_V2.md](../MIGRATION_V2.md) for upgrade guide.
+
+---
+
 A simple router for SwiftUI iOS 18+ with support for:
 - stacks for each tab (`NavigationStack`),
 - deeplinks with **stable** segments,
@@ -27,7 +39,14 @@ A simple router for SwiftUI iOS 18+ with support for:
 ```swift
 enum AppTab: String, TabType, CaseIterable { case home, profile }
 
+// Option 1: Simple destinations (no deep links)
 enum Destination: DestinationType {
+  case home
+  case detail(viewModel: DetailViewModel)  // Can use ViewModels!
+}
+
+// Option 2: With deep links (add Codable + URL methods)
+enum Destination: DeepLinkableDestination {
   case home
   case detail(id: String)
 
@@ -212,9 +231,11 @@ router.addInterceptor(AnalyticsInterceptor())
 router.removeAllInterceptors()
 ```
 
-## Example
+## Examples
 
-See `Examples/URLRoutingExample.swift` in the package for a complete demo build.
+See the `Examples/` folder:
+- `SimpleNavigationExample.swift` - Internal-only navigation (no deep links, ViewModels in destinations)
+- `URLRoutingExample.swift` - Deep link navigation with URL parsing
 
 ## MVVM Notes
 

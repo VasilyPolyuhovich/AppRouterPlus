@@ -140,7 +140,7 @@ public final class Router<Tab, Destination, Sheet> where Tab: TabType, Destinati
     /// - Returns: true if all interceptors allow navigation, false otherwise
     private func runInterceptors(from: Destination?, to: Destination) async -> Bool {
         for interceptor in interceptors {
-            if !await interceptor.shouldNavigate(from: from, to: to) {
+            if await interceptor.shouldNavigate(from: from, to: to) == false {
                 return false
             }
         }
@@ -215,7 +215,7 @@ public final class Router<Tab, Destination, Sheet> where Tab: TabType, Destinati
         let current = paths[t]?.last
         
         // Run interceptors
-        if !await runInterceptors(from: current, to: destination) {
+        if await runInterceptors(from: current, to: destination) == false {
             return false
         }
         
@@ -237,7 +237,7 @@ public final class Router<Tab, Destination, Sheet> where Tab: TabType, Destinati
         let current = paths[t]?.last
         
         // Run interceptors for first destination
-        if !await runInterceptors(from: current, to: firstDestination) {
+        if await runInterceptors(from: current, to: firstDestination) == false {
             return false
         }
         
@@ -249,9 +249,10 @@ public final class Router<Tab, Destination, Sheet> where Tab: TabType, Destinati
     // MARK: - Deep links
 
     /// Parse and navigate from a URL.
+    /// - Note: Only available when Destination conforms to DeepLinkableDestination.
     /// - Returns: true if URL was successfully applied.
     @discardableResult
-    public func navigate(to url: URL, policy: NavigationPolicy = .replace, deepPush: Bool = true) -> Bool {
+    public func navigate(to url: URL, policy: NavigationPolicy = .replace, deepPush: Bool = true) -> Bool where Destination: DeepLinkableDestination {
         guard let parsed = URLNavigationHelper.parse(url, tabType: Tab.self, destinationType: Destination.self) else {
             return false
         }
@@ -265,7 +266,7 @@ public final class Router<Tab, Destination, Sheet> where Tab: TabType, Destinati
     }
 
     /// Perform multi-step push for better SwiftUI stability.
-    private func deepPushTo(_ destinations: [Destination]) -> Bool {
+    private func deepPushTo(_ destinations: [Destination]) -> Bool where Destination: DeepLinkableDestination {
         let t = selectedTab
         paths[t] = []
         if destinations.isEmpty { return true }

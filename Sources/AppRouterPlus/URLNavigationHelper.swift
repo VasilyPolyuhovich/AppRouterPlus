@@ -3,13 +3,14 @@ import Foundation
 public enum URLNavigationHelper {
 
     /// Parse a URL into an optional target tab and an ordered list of destinations.
+    /// - Note: Only works with DeepLinkableDestination conforming types.
     public static func parse<Tab, Destination>(
         _ url: URL,
         tabType: Tab.Type,
         destinationType: Destination.Type
-    ) -> (tab: Tab?, destinations: [Destination])? where Tab: TabType, Destination: DestinationType {
+    ) -> (tab: Tab?, destinations: [Destination])? where Tab: TabType, Destination: DeepLinkableDestination {
 
-        guard var components = URLComponents(url: url, resolvingAgainstBaseURL: false) else { return nil }
+        guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false) else { return nil }
 
         // Collect query items as a multimap: [name: [values]]
         var params: [String:[String]] = [:]
@@ -65,12 +66,13 @@ public enum URLNavigationHelper {
 
     /// Build a stable deep link URL from destinations and an optional tab.
     /// Example: scheme://host/path?tab=profile&foo=bar
+    /// - Note: Only works with DeepLinkableDestination conforming types.
     public static func build<Tab, Destination>(
         scheme: String,
         tab: Tab? = nil,
         destinations: [Destination],
         extraQuery: [String:String] = [:]
-    ) -> URL? where Tab: TabType, Destination: DestinationType {
+    ) -> URL? where Tab: TabType, Destination: DeepLinkableDestination {
 
         guard !destinations.isEmpty else {
             var comps = URLComponents()

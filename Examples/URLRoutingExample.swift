@@ -5,7 +5,8 @@ enum AppTab: String, TabType, CaseIterable {
     case home, profile
 }
 
-enum Destination: DestinationType {
+// Deep link destinations must conform to DeepLinkableDestination (includes Codable)
+enum Destination: DeepLinkableDestination {
     case home
     case detail(id: String)
     case profile(userId: String)

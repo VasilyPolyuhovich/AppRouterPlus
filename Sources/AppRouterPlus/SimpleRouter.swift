@@ -97,7 +97,7 @@ public final class SimpleRouter<Destination, Sheet> where Destination: Destinati
     
     private func runInterceptors(from: Destination?, to: Destination) async -> Bool {
         for interceptor in interceptors {
-            if !await interceptor.shouldNavigate(from: from, to: to) {
+            if await interceptor.shouldNavigate(from: from, to: to) == false {
                 return false
             }
         }
@@ -110,7 +110,7 @@ public final class SimpleRouter<Destination, Sheet> where Destination: Destinati
     public func navigateToAsync(_ destination: Destination, policy: NavigationPolicy = .append) async -> Bool {
         let current = path.last
         
-        if !await runInterceptors(from: current, to: destination) {
+        if await runInterceptors(from: current, to: destination) == false {
             return false
         }
         
@@ -126,7 +126,7 @@ public final class SimpleRouter<Destination, Sheet> where Destination: Destinati
         
         let current = path.last
         
-        if !await runInterceptors(from: current, to: firstDestination) {
+        if await runInterceptors(from: current, to: firstDestination) == false {
             return false
         }
         
