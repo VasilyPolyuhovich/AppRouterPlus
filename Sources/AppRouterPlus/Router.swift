@@ -16,10 +16,16 @@ public final class Router<Tab, Destination, Sheet> where Tab: TabType, Destinati
     public var presentedFullScreenCovers: [Sheet] = []
     
     // MARK: - Dismiss Handlers
-    /// Called when a sheet is dismissed (programmatically or by swipe gesture).
+    /// Global handler called when any sheet is dismissed.
     public var onSheetDismiss: ((Sheet) -> Void)?
-    /// Called when a full-screen cover is dismissed (programmatically or by swipe gesture).
+    /// Global handler called when any full-screen cover is dismissed.
     public var onFullScreenCoverDismiss: ((Sheet) -> Void)?
+    
+    /// Per-sheet dismiss handlers. Automatically cleaned up after dismiss.
+    /// - Important: Use `[weak self]` in closures to avoid retain cycles.
+    private var sheetDismissHandlers: [Sheet: () -> Void] = [:]
+    /// Per-cover dismiss handlers. Automatically cleaned up after dismiss.
+    private var fullScreenDismissHandlers: [Sheet: () -> Void] = [:]
     
     // MARK: - Interceptors
     private var interceptors: [any NavigationInterceptor<Destination>] = []
@@ -60,7 +66,7 @@ public final class Router<Tab, Destination, Sheet> where Tab: TabType, Destinati
                 } else {
                     // pop and notify
                     if let dismissed = self.presentedSheets.popLastSafe() {
-                        self.onSheetDismiss?(dismissed)
+                        self.invokeSheetDismissHandler(for: dismissed)
                     }
                 }
             }
@@ -80,24 +86,55 @@ public final class Router<Tab, Destination, Sheet> where Tab: TabType, Destinati
                 } else {
                     // pop and notify
                     if let dismissed = self.presentedFullScreenCovers.popLastSafe() {
-                        self.onFullScreenCoverDismiss?(dismissed)
+                        self.invokeFullScreenDismissHandler(for: dismissed)
                     }
                 }
             }
         )
     }
+    
+    // MARK: - Private Dismiss Helpers
+    
+    /// Invokes per-sheet handler (if any), removes it, then calls global handler.
+    private func invokeSheetDismissHandler(for sheet: Sheet) {
+        // Per-sheet handler (one-time, auto-cleanup)
+        if let handler = sheetDismissHandlers.removeValue(forKey: sheet) {
+            handler()
+        }
+        // Global handler
+        onSheetDismiss?(sheet)
+    }
+    
+    /// Invokes per-cover handler (if any), removes it, then calls global handler.
+    private func invokeFullScreenDismissHandler(for sheet: Sheet) {
+        // Per-cover handler (one-time, auto-cleanup)
+        if let handler = fullScreenDismissHandlers.removeValue(forKey: sheet) {
+            handler()
+        }
+        // Global handler
+        onFullScreenCoverDismiss?(sheet)
+    }
 
     // MARK: - Sheet API
 
+    /// Present a sheet with optional dismiss callback.
+    /// - Parameters:
+    ///   - sheet: The sheet to present.
+    ///   - onDismiss: Optional callback invoked when this specific sheet is dismissed.
+    ///                Use `[weak self]` to avoid retain cycles.
+    /// - Returns: The presented sheet.
     @discardableResult
-    public func presentSheet(_ sheet: Sheet) -> Sheet {
+    public func presentSheet(_ sheet: Sheet, onDismiss: (() -> Void)? = nil) -> Sheet {
+        if let handler = onDismiss {
+            sheetDismissHandlers[sheet] = handler
+        }
         presentedSheets.append(sheet)
         return sheet
     }
 
     public func dismissSheet() {
         if let dismissed = presentedSheets.popLastSafe() {
-            onSheetDismiss?(dismissed)
+            invokeSheetDismissHandler(for: dismissed)
         }
     }
 
@@ -105,7 +142,7 @@ public final class Router<Tab, Destination, Sheet> where Tab: TabType, Destinati
         guard count > 0 else { return }
         for _ in 0..<count {
             if let dismissed = presentedSheets.popLastSafe() {
-                onSheetDismiss?(dismissed)
+                invokeSheetDismissHandler(for: dismissed)
             }
         }
     }
@@ -113,22 +150,40 @@ public final class Router<Tab, Destination, Sheet> where Tab: TabType, Destinati
     public func dismissSheets(to target: Sheet) {
         while let last = presentedSheets.last, last != target {
             if let dismissed = presentedSheets.popLastSafe() {
-                onSheetDismiss?(dismissed)
+                invokeSheetDismissHandler(for: dismissed)
             }
         }
+    }
+    
+    /// Dismiss all sheets and clean up all handlers.
+    public func dismissAllSheets() {
+        while let dismissed = presentedSheets.popLastSafe() {
+            invokeSheetDismissHandler(for: dismissed)
+        }
+        // Safety: clean any orphan handlers
+        sheetDismissHandlers.removeAll()
     }
 
     // MARK: - Full-Screen Cover API
 
+    /// Present a full-screen cover with optional dismiss callback.
+    /// - Parameters:
+    ///   - sheet: The cover to present.
+    ///   - onDismiss: Optional callback invoked when this specific cover is dismissed.
+    ///                Use `[weak self]` to avoid retain cycles.
+    /// - Returns: The presented cover.
     @discardableResult
-    public func presentFullScreenCover(_ sheet: Sheet) -> Sheet {
+    public func presentFullScreenCover(_ sheet: Sheet, onDismiss: (() -> Void)? = nil) -> Sheet {
+        if let handler = onDismiss {
+            fullScreenDismissHandlers[sheet] = handler
+        }
         presentedFullScreenCovers.append(sheet)
         return sheet
     }
 
     public func dismissFullScreenCover() {
         if let dismissed = presentedFullScreenCovers.popLastSafe() {
-            onFullScreenCoverDismiss?(dismissed)
+            invokeFullScreenDismissHandler(for: dismissed)
         }
     }
 
@@ -136,7 +191,7 @@ public final class Router<Tab, Destination, Sheet> where Tab: TabType, Destinati
         guard count > 0 else { return }
         for _ in 0..<count {
             if let dismissed = presentedFullScreenCovers.popLastSafe() {
-                onFullScreenCoverDismiss?(dismissed)
+                invokeFullScreenDismissHandler(for: dismissed)
             }
         }
     }
@@ -144,9 +199,18 @@ public final class Router<Tab, Destination, Sheet> where Tab: TabType, Destinati
     public func dismissFullScreenCovers(to target: Sheet) {
         while let last = presentedFullScreenCovers.last, last != target {
             if let dismissed = presentedFullScreenCovers.popLastSafe() {
-                onFullScreenCoverDismiss?(dismissed)
+                invokeFullScreenDismissHandler(for: dismissed)
             }
         }
+    }
+    
+    /// Dismiss all full-screen covers and clean up all handlers.
+    public func dismissAllFullScreenCovers() {
+        while let dismissed = presentedFullScreenCovers.popLastSafe() {
+            invokeFullScreenDismissHandler(for: dismissed)
+        }
+        // Safety: clean any orphan handlers
+        fullScreenDismissHandlers.removeAll()
     }
 
     // MARK: - Interceptor Management
