@@ -15,6 +15,12 @@ public final class Router<Tab, Destination, Sheet> where Tab: TabType, Destinati
     /// Multi-layer full-screen cover stack, top-most cover is last.
     public var presentedFullScreenCovers: [Sheet] = []
     
+    // MARK: - Dismiss Handlers
+    /// Called when a sheet is dismissed (programmatically or by swipe gesture).
+    public var onSheetDismiss: ((Sheet) -> Void)?
+    /// Called when a full-screen cover is dismissed (programmatically or by swipe gesture).
+    public var onFullScreenCoverDismiss: ((Sheet) -> Void)?
+    
     // MARK: - Interceptors
     private var interceptors: [any NavigationInterceptor<Destination>] = []
 
@@ -52,8 +58,10 @@ public final class Router<Tab, Destination, Sheet> where Tab: TabType, Destinati
                         self.presentedSheets.append(value)
                     }
                 } else {
-                    // pop
-                    _ = self.presentedSheets.popLastSafe()
+                    // pop and notify
+                    if let dismissed = self.presentedSheets.popLastSafe() {
+                        self.onSheetDismiss?(dismissed)
+                    }
                 }
             }
         )
@@ -70,8 +78,10 @@ public final class Router<Tab, Destination, Sheet> where Tab: TabType, Destinati
                         self.presentedFullScreenCovers.append(value)
                     }
                 } else {
-                    // pop
-                    _ = self.presentedFullScreenCovers.popLastSafe()
+                    // pop and notify
+                    if let dismissed = self.presentedFullScreenCovers.popLastSafe() {
+                        self.onFullScreenCoverDismiss?(dismissed)
+                    }
                 }
             }
         )
@@ -86,17 +96,25 @@ public final class Router<Tab, Destination, Sheet> where Tab: TabType, Destinati
     }
 
     public func dismissSheet() {
-        _ = presentedSheets.popLastSafe()
+        if let dismissed = presentedSheets.popLastSafe() {
+            onSheetDismiss?(dismissed)
+        }
     }
 
     public func dismissSheets(count: Int) {
         guard count > 0 else { return }
-        (0..<count).forEach { _ in _ = presentedSheets.popLastSafe() }
+        for _ in 0..<count {
+            if let dismissed = presentedSheets.popLastSafe() {
+                onSheetDismiss?(dismissed)
+            }
+        }
     }
 
     public func dismissSheets(to target: Sheet) {
         while let last = presentedSheets.last, last != target {
-            _ = presentedSheets.popLastSafe()
+            if let dismissed = presentedSheets.popLastSafe() {
+                onSheetDismiss?(dismissed)
+            }
         }
     }
 
@@ -109,17 +127,25 @@ public final class Router<Tab, Destination, Sheet> where Tab: TabType, Destinati
     }
 
     public func dismissFullScreenCover() {
-        _ = presentedFullScreenCovers.popLastSafe()
+        if let dismissed = presentedFullScreenCovers.popLastSafe() {
+            onFullScreenCoverDismiss?(dismissed)
+        }
     }
 
     public func dismissFullScreenCovers(count: Int) {
         guard count > 0 else { return }
-        (0..<count).forEach { _ in _ = presentedFullScreenCovers.popLastSafe() }
+        for _ in 0..<count {
+            if let dismissed = presentedFullScreenCovers.popLastSafe() {
+                onFullScreenCoverDismiss?(dismissed)
+            }
+        }
     }
 
     public func dismissFullScreenCovers(to target: Sheet) {
         while let last = presentedFullScreenCovers.last, last != target {
-            _ = presentedFullScreenCovers.popLastSafe()
+            if let dismissed = presentedFullScreenCovers.popLastSafe() {
+                onFullScreenCoverDismiss?(dismissed)
+            }
         }
     }
 
