@@ -98,4 +98,93 @@ public extension URLNavigationHelper {
             destinationType: destinationType
         )
     }
+
+    /// Build a Universal Link URL with a tab query parameter.
+    /// Symmetric with `build(scheme:tab:destinations:extraQuery:)` but for UL.
+    /// - Note: Does NOT validate host against any allow-list (parse-time concern).
+    /// - Note: `extraQuery` is single-value per key; for multi-value URLs build manually.
+    static func buildUniversalLink<Tab, Destination>(
+        host: String,
+        scheme: String = "https",
+        pathPrefix: String? = nil,
+        tab: Tab?,
+        destinations: [Destination],
+        extraQuery: [String: String] = [:]
+    ) -> URL?
+        where Tab: TabType, Destination: DeepLinkableDestination
+    {
+        _buildUniversalLink(
+            host: host,
+            scheme: scheme,
+            pathPrefix: pathPrefix,
+            tabRaw: tab.map { String(describing: $0) },
+            destinations: destinations,
+            extraQuery: extraQuery
+        )
+    }
+
+    /// Build a Universal Link URL without a tab parameter.
+    /// Convenience for callers that don't use tabs (e.g. SimpleRouter) or don't need to encode one.
+    static func buildUniversalLink<Destination>(
+        host: String,
+        scheme: String = "https",
+        pathPrefix: String? = nil,
+        destinations: [Destination],
+        extraQuery: [String: String] = [:]
+    ) -> URL?
+        where Destination: DeepLinkableDestination
+    {
+        _buildUniversalLink(
+            host: host,
+            scheme: scheme,
+            pathPrefix: pathPrefix,
+            tabRaw: nil,
+            destinations: destinations,
+            extraQuery: extraQuery
+        )
+    }
+
+    private static func _buildUniversalLink<Destination>(
+        host: String,
+        scheme: String,
+        pathPrefix: String?,
+        tabRaw: String?,
+        destinations: [Destination],
+        extraQuery: [String: String]
+    ) -> URL?
+        where Destination: DeepLinkableDestination
+    {
+        let normPrefix: String? = pathPrefix.map { p in
+            var s = p
+            while s.count > 1 && s.hasSuffix("/") { s.removeLast() }
+            return s
+        }
+
+        var comps = URLComponents()
+        comps.scheme = scheme
+        comps.host = host
+
+        var parts: [String] = []
+        if let prefix = normPrefix, !prefix.isEmpty {
+            let trimmed = prefix.hasPrefix("/") ? String(prefix.dropFirst()) : prefix
+            if !trimmed.isEmpty { parts.append(trimmed) }
+        }
+        for dest in destinations {
+            parts.append(Destination.path(for: dest))
+        }
+        comps.path = parts.isEmpty ? "/" : "/" + parts.joined(separator: "/")
+
+        var items: [URLQueryItem] = []
+        if let tabRaw {
+            items.append(URLQueryItem(name: "tab", value: tabRaw))
+        }
+        for (k, v) in extraQuery {
+            items.append(URLQueryItem(name: k, value: v))
+        }
+        if !items.isEmpty {
+            comps.queryItems = items
+        }
+
+        return comps.url
+    }
 }
