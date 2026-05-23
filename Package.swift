@@ -10,6 +10,10 @@ let package = Package(
         .library(name: "AppRouterPlus", targets: ["AppRouterPlus"])
     ],
     targets: [
-        .target(name: "AppRouterPlus")
+        .target(name: "AppRouterPlus"),
+        .testTarget(
+            name: "AppRouterPlusTests",
+            dependencies: ["AppRouterPlus"]
+        )
     ]
 )
