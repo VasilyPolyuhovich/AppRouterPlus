@@ -45,13 +45,11 @@ enum TestSheet: String, SheetType {
     var id: String { rawValue }
 }
 
-// MARK: - Configs (uncomment after Task 2 lands)
+// MARK: - Configs
 
-#if false
 enum TestConfigs {
     static let basic = UniversalLinkConfig(allowedHosts: ["example.com"])
     static let withPrefix = UniversalLinkConfig(allowedHosts: ["example.com"], pathPrefix: "/app")
     static let multiHost = UniversalLinkConfig(allowedHosts: ["example.com", "example.org"])
     static let httpAllowed = UniversalLinkConfig(allowedHosts: ["example.com"], allowedSchemes: ["https", "http"])
 }
-#endif
