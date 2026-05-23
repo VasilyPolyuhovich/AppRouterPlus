@@ -14,6 +14,58 @@ public extension SimpleRouter where Destination: DeepLinkableDestination {
         navigateTo(parsed.destinations, policy: policy)
         return true
     }
+
+    /// Navigate from a Universal Link URL (inline params).
+    @discardableResult
+    func navigate(
+        toUniversalLink url: URL,
+        allowedHosts: Set<String>,
+        pathPrefix: String? = nil,
+        allowedSchemes: Set<String> = ["https"],
+        policy: NavigationPolicy = .replace
+    ) -> Bool {
+        guard let parsed = URLNavigationHelper.parseUniversalLink(
+            url,
+            allowedHosts: allowedHosts,
+            pathPrefix: pathPrefix,
+            allowedSchemes: allowedSchemes,
+            tabType: NoTab.self,
+            destinationType: Destination.self
+        ) else {
+            return false
+        }
+        navigateTo(parsed.destinations, policy: policy)
+        return true
+    }
+
+    /// Config-flavored overload.
+    @discardableResult
+    func navigate(
+        toUniversalLink url: URL,
+        config: UniversalLinkConfig,
+        policy: NavigationPolicy = .replace
+    ) -> Bool {
+        navigate(
+            toUniversalLink: url,
+            allowedHosts: config.allowedHosts,
+            pathPrefix: config.pathPrefix,
+            allowedSchemes: config.allowedSchemes,
+            policy: policy
+        )
+    }
+
+    /// Handle `NSUserActivity` from `.onContinueUserActivity(NSUserActivityTypeBrowseWeb)`.
+    @discardableResult
+    func handleUserActivity(
+        _ userActivity: NSUserActivity,
+        config: UniversalLinkConfig,
+        policy: NavigationPolicy = .replace
+    ) -> Bool {
+        guard userActivity.activityType == AppRouterBrowseWebActivityType,
+              let url = userActivity.webpageURL
+        else { return false }
+        return navigate(toUniversalLink: url, config: config, policy: policy)
+    }
 }
 
 /// Private placeholder TabType for SimpleRouter URL parsing (single case, ignored).

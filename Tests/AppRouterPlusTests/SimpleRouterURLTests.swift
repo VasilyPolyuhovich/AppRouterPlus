@@ -38,4 +38,63 @@ struct SimpleRouterURLTests {
         #expect(ok == true)
         #expect(router.path == [.home])
     }
+
+    // MARK: - Universal Link
+
+    @Test("UL config overload: valid URL navigates")
+    func ulConfigValid() {
+        let router = makeRouter()
+        let url = URL(string: "https://example.com/home")!
+        let ok = router.navigate(toUniversalLink: url, config: TestConfigs.basic)
+        #expect(ok == true)
+        #expect(router.path == [.home])
+    }
+
+    @Test("UL inline overload: valid URL navigates")
+    func ulInlineValid() {
+        let router = makeRouter()
+        let url = URL(string: "https://example.com/home")!
+        let ok = router.navigate(
+            toUniversalLink: url,
+            allowedHosts: ["example.com"]
+        )
+        #expect(ok == true)
+        #expect(router.path == [.home])
+    }
+
+    @Test("UL: invalid host → false")
+    func ulInvalidHost() {
+        let router = makeRouter()
+        let url = URL(string: "https://other.com/home")!
+        let ok = router.navigate(toUniversalLink: url, config: TestConfigs.basic)
+        #expect(ok == false)
+    }
+
+    @Test("UL: tab query ignored (SimpleRouter has no tabs)")
+    func ulIgnoresTab() {
+        let router = makeRouter()
+        let url = URL(string: "https://example.com/home?tab=anything")!
+        let ok = router.navigate(toUniversalLink: url, config: TestConfigs.basic)
+        #expect(ok == true)
+        #expect(router.path == [.home])
+    }
+
+    @Test("handleUserActivity: BrowseWeb → navigates")
+    func ulHandleBrowseWeb() {
+        let router = makeRouter()
+        let activity = NSUserActivity(activityType: AppRouterBrowseWebActivityType)
+        activity.webpageURL = URL(string: "https://example.com/home")
+        let ok = router.handleUserActivity(activity, config: TestConfigs.basic)
+        #expect(ok == true)
+        #expect(router.path == [.home])
+    }
+
+    @Test("handleUserActivity: non-BrowseWeb → false")
+    func ulHandleNonBrowseWeb() {
+        let router = makeRouter()
+        let activity = NSUserActivity(activityType: "com.example.other")
+        activity.webpageURL = URL(string: "https://example.com/home")
+        let ok = router.handleUserActivity(activity, config: TestConfigs.basic)
+        #expect(ok == false)
+    }
 }
