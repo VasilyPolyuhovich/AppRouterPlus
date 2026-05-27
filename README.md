@@ -136,7 +136,7 @@ extension UniversalLinkConfig {
 }
 ```
 
-4. Hook `.onContinueUserActivity(AppRouterBrowseWebActivityType)` at root:
+4. Hook `.onContinueUserActivity(NSUserActivityTypeBrowseWeb)` at root and extract `webpageURL`:
 
 ```swift
 ContentView()
@@ -144,13 +144,15 @@ ContentView()
         // Custom-scheme deeplink (myapp://...)
         _ = router.navigate(to: url)
     }
-    .onContinueUserActivity(AppRouterBrowseWebActivityType) { activity in
+    .onContinueUserActivity(NSUserActivityTypeBrowseWeb) { activity in
         // Universal link (https://...)
-        _ = router.handleUserActivity(activity, config: .myApp)
+        if let url = activity.webpageURL {
+            _ = router.navigate(toUniversalLink: url, config: .myApp)
+        }
     }
 ```
 
-> `AppRouterBrowseWebActivityType` is a string constant exported by AppRouterPlus equal to `"NSUserActivityTypeBrowseWeb"`. Used so the library doesn't have to import UIKit/AppKit just for one constant. You can also use `NSUserActivityTypeBrowseWeb` directly if you `import UIKit`.
+> The library intentionally does NOT wrap `NSUserActivity` — it stays URL-based so you can feed URLs from any source (Universal Links, push notification payloads, share extensions, etc.) without coupling to a specific delivery API.
 
 ### Parsing
 
@@ -177,7 +179,7 @@ let url = URLNavigationHelper.buildUniversalLink(
 
 ### SimpleRouter
 
-`SimpleRouter` (single-tab variant) also supports `navigate(to: URL)`, `navigate(toUniversalLink:)`, and `handleUserActivity(_:config:)` with the same semantics, minus tab handling.
+`SimpleRouter` (single-tab variant) also supports `navigate(to: URL)` and `navigate(toUniversalLink:)` with the same semantics, minus tab handling.
 
 ## Navigation policies
 

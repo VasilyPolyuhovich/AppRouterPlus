@@ -78,23 +78,4 @@ struct SimpleRouterURLTests {
         #expect(ok == true)
         #expect(router.path == [.home])
     }
-
-    @Test("handleUserActivity: BrowseWeb → navigates")
-    func ulHandleBrowseWeb() {
-        let router = makeRouter()
-        let activity = NSUserActivity(activityType: AppRouterBrowseWebActivityType)
-        activity.webpageURL = URL(string: "https://example.com/home")
-        let ok = router.handleUserActivity(activity, config: TestConfigs.basic)
-        #expect(ok == true)
-        #expect(router.path == [.home])
-    }
-
-    @Test("handleUserActivity: non-BrowseWeb → false")
-    func ulHandleNonBrowseWeb() {
-        let router = makeRouter()
-        let activity = NSUserActivity(activityType: "com.example.other")
-        activity.webpageURL = URL(string: "https://example.com/home")
-        let ok = router.handleUserActivity(activity, config: TestConfigs.basic)
-        #expect(ok == false)
-    }
 }

@@ -53,19 +53,6 @@ public extension SimpleRouter where Destination: DeepLinkableDestination {
             policy: policy
         )
     }
-
-    /// Handle `NSUserActivity` from `.onContinueUserActivity(NSUserActivityTypeBrowseWeb)`.
-    @discardableResult
-    func handleUserActivity(
-        _ userActivity: NSUserActivity,
-        config: UniversalLinkConfig,
-        policy: NavigationPolicy = .replace
-    ) -> Bool {
-        guard userActivity.activityType == AppRouterBrowseWebActivityType,
-              let url = userActivity.webpageURL
-        else { return false }
-        return navigate(toUniversalLink: url, config: config, policy: policy)
-    }
 }
 
 /// Private placeholder TabType for SimpleRouter URL parsing (single case, ignored).

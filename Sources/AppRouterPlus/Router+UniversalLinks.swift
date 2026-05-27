@@ -1,10 +1,5 @@
 import Foundation
 
-/// The activity type string for web browsing Universal Links.
-/// Declared here to avoid pulling in UIKit/AppKit just for one constant.
-/// Value matches `NSUserActivityTypeBrowseWeb` from UIKit/AppKit.
-public let AppRouterBrowseWebActivityType = "NSUserActivityTypeBrowseWeb"
-
 public extension Router where Destination: DeepLinkableDestination {
 
     /// Navigate from a Universal Link URL (inline params).
@@ -55,20 +50,5 @@ public extension Router where Destination: DeepLinkableDestination {
             policy: policy,
             deepPush: deepPush
         )
-    }
-
-    /// Handle `NSUserActivity` from `.onContinueUserActivity(NSUserActivityTypeBrowseWeb)`.
-    /// - Returns: `false` if activity is not BrowseWeb, has no `webpageURL`, or parsing fails.
-    @discardableResult
-    func handleUserActivity(
-        _ userActivity: NSUserActivity,
-        config: UniversalLinkConfig,
-        policy: NavigationPolicy = .replace,
-        deepPush: Bool = true
-    ) -> Bool {
-        guard userActivity.activityType == AppRouterBrowseWebActivityType,
-              let url = userActivity.webpageURL
-        else { return false }
-        return navigate(toUniversalLink: url, config: config, policy: policy, deepPush: deepPush)
     }
 }

@@ -83,40 +83,4 @@ struct RouterUniversalLinkTests {
         #expect(ok == true)
         #expect(router[pathFor: .home] == [.home]) // immediate, no async
     }
-
-    // MARK: - handleUserActivity
-
-    @Test("handleUserActivity: BrowseWeb + webpageURL → navigates")
-    func handleBrowseWeb() {
-        let router = makeRouter()
-        let activity = NSUserActivity(activityType: AppRouterBrowseWebActivityType)
-        activity.webpageURL = URL(string: "https://example.com/home?tab=home")
-        let ok = router.handleUserActivity(
-            activity, config: TestConfigs.basic, deepPush: false
-        )
-        #expect(ok == true)
-        #expect(router[pathFor: .home] == [.home])
-    }
-
-    @Test("handleUserActivity: non-BrowseWeb activity → false")
-    func handleNonBrowseWeb() {
-        let router = makeRouter()
-        let activity = NSUserActivity(activityType: "com.example.other")
-        activity.webpageURL = URL(string: "https://example.com/home")
-        let ok = router.handleUserActivity(
-            activity, config: TestConfigs.basic, deepPush: false
-        )
-        #expect(ok == false)
-    }
-
-    @Test("handleUserActivity: nil webpageURL → false")
-    func handleNoURL() {
-        let router = makeRouter()
-        let activity = NSUserActivity(activityType: AppRouterBrowseWebActivityType)
-        // webpageURL not set
-        let ok = router.handleUserActivity(
-            activity, config: TestConfigs.basic, deepPush: false
-        )
-        #expect(ok == false)
-    }
 }

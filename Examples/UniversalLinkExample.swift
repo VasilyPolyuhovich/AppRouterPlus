@@ -78,8 +78,10 @@ struct UniversalLinkDemoView: View {
             _ = router.navigate(to: url)
         }
         // Universal Link: https://example.com/profile?userId=42&tab=profile
-        .onContinueUserActivity(AppRouterBrowseWebActivityType) { activity in
-            _ = router.handleUserActivity(activity, config: .example)
+        .onContinueUserActivity(NSUserActivityTypeBrowseWeb) { activity in
+            if let url = activity.webpageURL {
+                _ = router.navigate(toUniversalLink: url, config: .example)
+            }
         }
     }
 }
