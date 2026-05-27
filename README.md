@@ -117,6 +117,70 @@ TabView(selection: $router.selectedTab) {
 .onOpenURL { url in _ = router.navigate(to: url) }
 ```
 
+## Universal Links
+
+Native handling of Apple Universal Links (`https://yourdomain.com/...`) — parameterized for any host, scheme, and optional path prefix. No hard-coded domains in the library.
+
+### Setup (app side)
+
+1. Enable `Associated Domains` capability in Xcode (e.g. `applinks:yourdomain.com`).
+2. Serve `.well-known/apple-app-site-association` on your domain (see Apple docs).
+3. Declare a `UniversalLinkConfig` once:
+
+```swift
+extension UniversalLinkConfig {
+    static let myApp = UniversalLinkConfig(
+        allowedHosts: ["yourdomain.com"],
+        pathPrefix: nil // e.g. "/app" if your URLs use a prefix
+    )
+}
+```
+
+4. Hook `.onContinueUserActivity(NSUserActivityTypeBrowseWeb)` at root and extract `webpageURL`:
+
+```swift
+ContentView()
+    .onOpenURL { url in
+        // Custom-scheme deeplink (myapp://...)
+        _ = router.navigate(to: url)
+    }
+    .onContinueUserActivity(NSUserActivityTypeBrowseWeb) { activity in
+        // Universal link (https://...)
+        if let url = activity.webpageURL {
+            _ = router.navigate(toUniversalLink: url, config: .myApp)
+        }
+    }
+```
+
+> The library intentionally does NOT wrap `NSUserActivity` — it stays URL-based so you can feed URLs from any source (Universal Links, push notification payloads, share extensions, etc.) without coupling to a specific delivery API.
+
+### Parsing
+
+`URLNavigationHelper.parseUniversalLink(url, config:, tabType:, destinationType:)` returns `(tab, destinations)` or `nil` on validation failure. Validates scheme (default `https`), host (exact match, case-insensitive), optional path prefix (per-segment match).
+
+### Building UL URLs
+
+```swift
+let url = URLNavigationHelper.buildUniversalLink(
+    host: "yourdomain.com",
+    tab: AppTab.profile,
+    destinations: [Destination.profile(userId: "42")],
+    extraQuery: ["userId": "42"]
+)
+// → https://yourdomain.com/profile?userId=42&tab=profile
+```
+
+### Edge cases
+
+- Host comparison is case-insensitive (RFC 3986); `allowedHosts` are lowercased at config init.
+- `pathPrefix` matches per-segment: `"/app"` accepts `"/app"` and `"/app/x"`, rejects `"/appstore"`.
+- Multi-value `?tab=a&tab=b` → LAST wins.
+- `deepPush: true` + `policy: .replace` runs navigation asynchronously (background `MainActor` Task); the method returns `true` immediately. Pass `deepPush: false` for synchronous completion.
+
+### SimpleRouter
+
+`SimpleRouter` (single-tab variant) also supports `navigate(to: URL)` and `navigate(toUniversalLink:)` with the same semantics, minus tab handling.
+
 ## Navigation policies
 
 ```swift

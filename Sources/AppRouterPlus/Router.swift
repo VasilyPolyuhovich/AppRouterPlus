@@ -356,7 +356,8 @@ public final class Router<Tab, Destination, Sheet> where Tab: TabType, Destinati
     }
 
     /// Perform multi-step push for better SwiftUI stability.
-    private func deepPushTo(_ destinations: [Destination]) -> Bool where Destination: DeepLinkableDestination {
+    /// Internal so URL-handling extensions (custom-scheme + Universal Links) can reuse it.
+    internal func deepPushTo(_ destinations: [Destination]) -> Bool where Destination: DeepLinkableDestination {
         let t = selectedTab
         paths[t] = []
         if destinations.isEmpty { return true }
